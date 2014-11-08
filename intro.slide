@@ -1,0 +1,437 @@
+Go Coding Lab
+8. November, 2014
+
+Ingo Oeser
+GDG Hamburg Golang & Jimdo GmbH
+https://github.com/nightlyone
+@nightlyone
+
+* Übersicht
+
+- Was brauchen wir um loszulegen?
+- Basiswissen Go
+- kurze Pause + Fragen
+- Mein erstes Go-Programm
+
+- Mittagspause
+
+- Channels & Go-Routinen
+- Go als vollständiger Web-Stack
+- kurze Pause + Fragen
+- Mein erster Web-Service in Go
+
+* Hilfe!!!
+- Du hast das schon erledigt?
+- Du kennst dich mit diesem Teil schon aus?
+- _Bitte_ _helfe_ _den_ _anderen!_
+
+* Was brauchen wir um loszulegen?
+- Go installieren [[http://golang.org/doc/install]]
+- Github-Account anlegen
+- Git installieren [[https://help.github.com/articles/set-up-git]]
+- GOPATH einrichten [[http://golang.org/doc/code.html]]
+- Go-sample auf github in eigenen Account forken
+.link https://github.com/nightlyone/go-sample/fork 
+	go get github.com/nutzer/go-sample
+- "nutzer" ist natürlich euer Github-Account
+* Kein Editor zu Hand?
+[[http://www.sublimetext.com][Sublime]] mit [[https://sublime.wbond.net/installation][PackageControl Plugin]] und damit dann [[https://github.com/DisposaBoy/GoSublime][GoSublime installieren]]
+
+* GOPATH?
+Dein Go-Code wird in einem Arbeitsbereich (GOPATH) gelagert.
+Ein Arbeitsbereich enthält viele Quell-Repositories (git, hg).
+Das Werkzeug `go` versteht den Aufbau dieses Arbeitsbereiches.
+Daher werden keine Makefiles, Rakefiles usw. benötigt. Nur der Aufbau des Arbeitsbereiches gibt die Struktur vor.
+
+- Aufbau des GOPATHs ist wie folgt:
+	$GOPATH/
+	    src/
+		github.com/nutzer/repository/
+		    meinpackage/
+			src1.go
+			src2.go
+		    cmd/meinkommando/
+			main.go
+	    bin/
+		meinkommando <- ein Kompilat!
+
+Dabei ist "nutzer" ist wieder euer Github-Account.
+
+
+* Basiswissen Go
+
+- Moderne Programmiersprache
+# unterstützt objektorietiertes Programmierern, keine Typ-Hierarchien
+# Mächtige Unterstützung für Nebenläufige Elemente von Programmen
+- Kompakt, präzise, allgemeingültig
+- Imperativ, statische Typisierung, dynamische Typprüfung möglich
+- Garbage-Collection
+- Kompiliert zu nativem Maschinencode, wird statisch gelinkt
+- Schnelles übersetzen, effiziente Ausführung
+
+Von Programmiern für Programmierer entworfen.
+
+
+* Hello, World!
+
+.play intro/hello.go
+
+# Unicode
+# Programme sind in Packages organisiert
+# Ein Package ist ein Satz von Package-Dateien
+# Eine Datein in einem Package drückt seine Abhängigkeiten mittels "import"-Deklarationen aus
+# Der Rest der Packages ist eine Liste von Konstanten, Variablen, Typen und Funktionen
+
+
+* Hello, World! Internet-style
+
+.play intro/hellohttp.go
+
+
+* Elemente eines Go Programmes
+
+* Konstanten
+
+- Sind sehr präzise
+	const e = 2.71828182845904523536028747135266249775724709369995957496696763
+	const third = 1/3
+- Mit oder ohne Typ
+	const M64 int64 = 1<<20
+        const M = 1<<20
+- Werden erst zur Übersetzungszeit ausgewertet
+	const big = 1<<100 / 1e30  // gültiger konstanter Ausdruck
+
+Compiler beschwert sich, wenn eine Konstante an der Stelle, wo sie _benutzt_ wird, unpassend ist.
+
+
+* Variablen
+
+- Statisch typisiert:
+	var x int
+	var s, t string
+- Implizit oder explizit initialisiert:
+	var x int
+	var s, t string = "foo", "bar"  // mehrfache Zuweisung
+	var x = 42                      // int
+	var s, b = "foo", true          // string, bool
+- Verkürzte Variablendeklaration (geht nur in Funktionen):
+	x := 42
+	s, b := "foo", true
+- Die Adresse _jeder_ beliebigen Variablen kann ermittelt und weitergereicht werden!
+	return &x
+# Der Compiler macht dann automatisch das richtige je nach Kontext.
+
+
+* Typen
+
+- Die üblichen Datentypen sind bereits vordefiniert:
+	uint8 (byte), uint16, uint32, uint32, uint64,
+	int8, int16, int32, int32 (rune), int64,
+	float32, float64,
+	complex64, complex128,
+	uint, int, uintptr,
+	bool, string,
+	error  // nicht ganz so üblich...
+
+- Strukturierende Datentypen (composite types):
+	array, struct, pointer, function,
+	slice, map, channel
+
+- Abstrakter Datentyp:
+	interface
+
+
+* Wie deklariert man Datentypen?
+
+- Werden von links nach rechts gebildet (kennen einige vielleicht von Pascal):
+	[10]byte  // array of 10 bytes
+
+	struct {
+		name        string
+		left, right *Node
+		action      func(*Node)
+	}
+
+	func(a, b, c int)
+	func(http.ResponseWriter, *http.Request) error
+
+- Eine Typendeklaration definiert _immer_ einen _neuen_ Datentyp:
+	type Weekday int
+
+	type Point struct {
+		x, y int
+	}
+
+
+* Slices (Scheibchen)
+
+	[]T  // slice of T
+
+- Beschreibt ein Array-Ausschnitt
+- Kann wachsen und schrumpfen
+- Hat eine Länge und eine Kapazität
+- Zuweisung einer Slice kopiert die Beschreibung des Array-Ausschnitts, nicht jedoch das Array selber
+
+Übliche Operationen auf Slices:
+
+	len(s)        // Wie lang ist sie?
+	cap(s)        // Wieviel passt da rein? 
+	s[i]
+	s[i:j]
+	append(s, x)  // hänge Element x an Slice s an und gebe das Resultat (neue Slice) zurück
+
+- Slices spielen die Rolle dynamisch wachsender Arrays in Go
+- Sehr häufig in Go code anzutreffen
+
+
+* Maps (eindeutige Abbildungen)
+
+	map[K]V  // bilde K auf V ab
+
+- Maps sind eine in der Sprache Go verankerte Hashtabelle
+- Bildet Werte des Schlüsseltypes K auf Werte des Types V ab
+- Zuweisung einer Map kopiert nur die Referenz auf diese Map, nicht jedoch dessen Inhalt
+
+Übliche Operationen auf Maps:
+
+	make(map[K]V)
+	len(m)
+	m[k]
+	delete(m, k)
+
+- Reihenfolge der Durchmusterung von Maps ist nicht defininiert:
+
+	for key, value := range m {
+		// Reihenfolge in der Werte von "key" ist jedes mal anders.
+	}
+
+* Statements (Anweisungen)
+
+- Geschweifte Klammern (wie in C)
+- Mehrfachzuweisungen und andere nützliche Erweiterungen
+- Aufgeräumterer Code: Geschweifte Klammern Pflicht, keine runden Klammern bei Bedingungen, implizites "break" bei "switch", keine Semikolons usw.
+	a, b = b, a                 // a und b vertauschen
+	f, err = os.Open(filename)
+
+	if x < y {
+		return x
+	} else {
+		return y
+	}
+
+	switch day {
+	case Mon:
+		...
+		// "break" ist implizit
+	case Tue, Wed:
+		...
+	}
+
+
+
+* Funktionen
+
+- Einfache Functionen
+	func Sin(x float64) float64
+	func AddScale(x, y int, f float64) int
+
+- Mehrere Rückgabewerte
+	func Write(data []byte) (written int, err error)
+
+- Variable Parameterlisten (ganz ohne Magie!)
+	func Printf(format string, args ...interface{})
+
+- Funktionen sind "first-class" Werte (z.B. Closures)
+	var delta int
+	return func(x int) int { return x + delta }
+
+
+* Funktionen als Werte - ein Beispiel
+
+	// walkStdLib ruft f mit dem Dateinamen von jeder
+	// .go-Datei in der Standardbibliothen auf, bis f false ergibt.
+	func walkStdLib(f func(filename string) bool)
+
+Aufruf von walkStdLib mit einer Closure:
+
+.code intro/walk.go /example START/,/example END/
+
+Etwas direkter:
+
+.play intro/walk.go /main START/,/main END/
+
+
+* Methoden
+
+Methoden sind Funktionen mit einem zusätzlichen Parameter, der _Receiver_ genannt wird:
+
+.code intro/point.go /String START/,/String END/
+
+Der Receiver bindet die Methode an ihren _Basistyp_ (Point im Beispiel):
+
+.code intro/point.go /Point START/,/Point END/
+
+Methoden werden über die übliche Punktnotation aufgerufen:
+
+.play intro/point.go /main START/,/main END/
+
+
+* Methoden an beliebige selber definierten Typen hängen!
+
+Beispiel Weekday Typ:
+
+.code intro/weekday.go /type START/,/type END/
+
+`String` Methode an Weekday gehängt:
+
+.code intro/weekday.go /String START/,/String END/
+
+.play intro/weekday.go /main START/,/main END/
+
+Wenn man Methoden _nicht_ durch Interfaces hindurch aufruft, werden sie sogar statisch aufgelöst!
+
+* Interfaces (Schnittstellen)
+
+- Sind abstrakt
+- Definieren eine (evtl. leere) Menge von Methodensignaturen.
+- Werte eines _jeden_ Typs, der alle Methoden dieses Interfaces implementiert, kann einer Variable dieses Interfaces zugewiesen werden.
+
+Beispiele:
+
+	interface{}  // leeres Interface
+
+	interface {
+		String() string
+	}
+
+	interface {
+		Len() int
+		Swap(i, j int)
+		Less(i, j int) bool
+	}
+
+
+* Interfaces im Einsatz
+
+.code intro/stringer.go /Stringer START/,/Stringer END/
+
+Sowohl Weekday als auch Point definieren eine Methode String. Damit kann jeder Wert dieser Typen einer Variable vom Typ Stringer zugwiesen werden:
+
+.play intro/stringer.go /main START/,/main END/
+
+Methodenaufrufe durch Interfaces hindurch werden dynamisch gebunden ("virtueller Funktionsaufruf").
+
+* kurze Pause + Fragen
+
+* Mein erstes Go-Programm
+* Live-Coding session
+- [[http://godoc.org/fmt][fmt]] Package
+- [[http://godoc.org/io][io]] Package
+- [[http://godoc.org/log][log]] Package
+
+* Mittag (13:45 Uhr geht es weiter)
+
+* Concurrency (Nebenläufigkeit)
+
+
+* Goroutinen
+
+- Das _go_ Statement startet einen Funktionsaufruf als _Goroutine_
+	go f()
+	go f(x, y, ...)
+
+- Goroutine läuft nebenläufig zu anderen Goroutinen (aber nicht unbedingt gleichzeitig)
+- Goroutine hat eigenen Stack
+
+
+* Einfaches Beispiel
+
+.code intro/concurrency1.go /f START/,/f END/
+
+Funktion f wird als 3 Goroutinen gestartet, die alle nebenläufig laufen.
+
+.play intro/concurrency1.go /main START/,/main END/
+
+
+* Kommunikation mittels Channels
+
+Ein `channel` Typ zeichnet sich durch einen Wertetyp der durch den Channel geschickt wird aus:
+
+	chan int
+	chan<- string  // nur sendender channel
+	<-chan T       // nur empfangender channel
+
+Ein Channel ist eine Variable vom Typ `chan Typ` (Typ ist hier `int`)
+
+	var ch chan int
+	ch := make(chan int)  // Deklariere und Initialisiere neuen Channel
+
+Ein Channel ermöglicht das _Senden_ und _Empfangen_ von Werten:
+
+	ch <- 1   // sende Wert 1 in Channel ch
+	x := <-ch  // empfange Wert aus Channel ch (und weise Wert x zu)
+
+Channel synchronisieren die Kommunikationen von Goroutinen.
+
+* Kommunizierende Goroutinen
+
+Jede Goroutine sendet sein Ergebnis durch den Channel ch:
+
+.code intro/concurrency2.go /f START/,/f END/
+
+Die Hauptgoroutine (main) Empfängt alle Werte von dem gleichen Channel und gibt diese aus:
+
+.play intro/concurrency2.go /main START/,/main END/
+
+
+* Und nun alles zusammen!
+
+
+* Nebenläufige Analyse der Dateien im Map-Reduce-Stil
+
+Mapper:
+
+.code intro/histop.go /mapper START/,/mapper END/
+
+Reducer:
+
+.code intro/histop.go /reducer START/,/reducer END/
+
+.code intro/histop.go /merge START/,/merge END/
+
+
+* Vom sequentiellen Programm...
+
+.play intro/histo.go /main START/,/main END/
+
+
+* ... zum Nebenläufigen Programm...
+
+.play intro/histop.go /main START/,/main END/
+
+
+* Weiterführende Links
+
+- Die umfangreiche Standardbibliothek
+
+.link http://golang.org/pkg/
+
+- Mächtige Werkzeuge
+
+.link http://play.golang.org/p/Au02fFpYdf
+# playground, gofmt
+
+- Multi-platform support
+
+.link http://build.golang.org/
+
+- Großartige Dokumentation
+
+.link http://tour.golang.org/#1
+
+* Danke!
+- Inspirierende Talks (aus dem ein Teil des Materials stammt)
+.link http://talks.golang.org
+
+* Lizenz
+Inhalt dieses Talks ist unter der "Creative Commons Attribution 3.0 License" lizensiert und sämtlicher Code unter der "BSD license".
